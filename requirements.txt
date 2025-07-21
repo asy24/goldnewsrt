@@ -1,0 +1,6 @@
+feedparser
+pandas
+pandas-ta
+transformers
+python-telegram-bot
+aiohttp

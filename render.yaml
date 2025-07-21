@@ -1,0 +1,13 @@
+# This config tells Render how to deploy your bot as a service
+services:
+  - type: web
+    name: telegram-alert-bot
+    env: python
+    plan: free
+    region: ohio   # or your preferred region
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python main.py"
+    envVars:
+      TELEGRAM_TOKEN: "8165619808:AAHOo8oYLLncW0VgCyZrdsytHnJtgvXSCbs"
+      CHAT_ID: "123456789"
+      AV_API_KEY: "YOUR_ALPHA_VANTAGE_KEY"
