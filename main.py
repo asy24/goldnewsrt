@@ -1,10 +1,10 @@
-import os, pprint
-pprint.pprint({
-    'TELEGRAM_TOKEN': os.getenv('TELEGRAM_TOKEN'),
-    'CHAT_ID': os.getenv('CHAT_ID'),
-    'AV_API_KEY': os.getenv('AV_API_KEY'),
-})
+Below is the updated set of files. I’ve switched to reading `CHAT_ID` and `TELEGRAM_TOKEN` (and `AV_API_KEY`) from environment variables, so you won’t need to rebuild to change them. Also added a quick startup check to catch a missing or invalid `CHAT_ID` before entering the loop.
 
+---
+
+## 1. `main.py` — Bot Logic
+
+```python
 import os
 import asyncio
 import feedparser
@@ -15,14 +15,14 @@ from telegram.error import BadRequest
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 # ─── CONFIG ─────────────────────────────────────────────────────────────────────
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "").strip()  # strip whitespace/newlines
 CHAT_ID        = os.getenv("CHAT_ID")       # should be the integer ID of your chat
-AV_API_KEY     = os.getenv("AV_API_KEY")    # Alpha Vantage key
+AV_API_KEY     = os.getenv("AV_API_KEY", "").strip()  # strip whitespace/newlines("AV_API_KEY")    # Alpha Vantage key
 
 if not all([TELEGRAM_TOKEN, CHAT_ID, AV_API_KEY]):
     raise RuntimeError("Missing one of TELEGRAM_TOKEN, CHAT_ID, or AV_API_KEY in environment")
 
-CHAT_ID = int(CHAT_ID)
+CHAT_ID = int(str(CHAT_ID).strip())  # ensure no stray newlines
 bot = Bot(token=TELEGRAM_TOKEN)
 
 # ─── RSI FUNCTION (pure pandas) ─────────────────────────────────────────────────
@@ -101,3 +101,39 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+```
+
+---
+
+## 2. `requirements.txt` — Dependencies
+
+```text
+setuptools
+feedparser
+pandas
+numpy
+vaderSentiment
+python-telegram-bot
+aiohttp
+```
+
+---
+
+## 3. `render.yaml` — Render Deployment Config
+
+```yaml
+services:
+  - type: worker
+    name: telegram-alert-bot
+    env: python
+    plan: free
+    region: ohio
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python main.py"
+    envVars:
+      TELEGRAM_TOKEN: "8165619808:AAHOo8oYLLncW0VgCyZrdsytHnJtgvXSCbs"
+      CHAT_ID: "<YOUR_CHAT_ID>"
+      AV_API_KEY: "<YOUR_ALPHA_VANTAGE_KEY>"
+```
+
+**Tip:** To find your `CHAT_ID`, send a message to your bot and hit `https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates`—the JSON response will include the numeric ID under `chat.id`. Replace `<YOUR_CHAT_ID>` in `render.yaml`, then redeploy.
