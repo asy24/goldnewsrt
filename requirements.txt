@@ -1,3 +1,4 @@
+setuptools
 feedparser
 pandas
 pandas-ta
