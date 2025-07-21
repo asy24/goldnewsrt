@@ -3,7 +3,7 @@ services:
     name: telegram-alert-bot
     env: python
     plan: free
-    region: ohio   # or your preferred region
+    region: ohio
     buildCommand: "pip install -r requirements.txt"
     startCommand: "python main.py"
     envVars:
