@@ -1,6 +1,5 @@
-# This config tells Render how to deploy your bot as a service
 services:
-  - type: web
+  - type: worker
     name: telegram-alert-bot
     env: python
     plan: free
