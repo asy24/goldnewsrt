@@ -4,7 +4,6 @@ import pandas as pd
 from datetime import datetime
 from transformers import pipeline
 from telegram import Bot
-from ta.momentum import RSIIndicator
 
 # ─── CONFIG ─────────────────────────────────────────────────────────────────────
 TELEGRAM_TOKEN = "8165619808:AAHOo8oYLLncW0VgCyZrdsytHnJtgvXSCbs"
@@ -12,6 +11,18 @@ CHAT_ID        = 123456789  # replace with your chat_id
 AV_API_KEY     = "YOUR_ALPHA_VANTAGE_KEY"
 
 bot = Bot(token=TELEGRAM_TOKEN)
+
+# ─── RSI FUNCTION (pure pandas) ─────────────────────────────────────────────────
+def compute_rsi(series: pd.Series, period: int = 14) -> pd.Series:
+    delta = series.diff()
+    gain = delta.clip(lower=0)
+    loss = -delta.clip(upper=0)
+    # Use Wilder's EMA
+    avg_gain = gain.ewm(alpha=1/period, min_periods=period).mean()
+    avg_loss = loss.ewm(alpha=1/period, min_periods=period).mean()
+    rs = avg_gain / avg_loss
+    rsi = 100 - (100 / (1 + rs))
+    return rsi
 
 # ─── 1) GDELT RSS ────────────────────────────────────────────────────────────────
 def fetch_gdelt_events():
@@ -24,7 +35,7 @@ def fetch_ecb_rss():
     return feedparser.parse(url).entries
 
 # ─── 3) INTRADAY FX ──────────────────────────────────────────────────────────────
-def fetch_fx(symbol="XAUUSD", interval="15min"):
+def fetch_fx(symbol: str = "XAUUSD", interval: str = "15min") -> pd.DataFrame:
     url = (
         f"https://www.alphavantage.co/query?"
         f"function=FX_INTRADAY&from_symbol={symbol[:3]}&to_symbol={symbol[3:]}&"
@@ -58,9 +69,8 @@ async def scan_and_dispatch():
     # 5c) Technical RSI on XAU/USD
     df = fetch_fx()
     df.set_index("timestamp", inplace=True)
-    # compute RSI(14) via `ta`
-    rsi_series = RSIIndicator(df['close'], window=14).rsi()
-    last_rsi = rsi_series.iloc[-1]
+    df["RSI14"] = compute_rsi(df["close"], period=14)
+    last_rsi = df["RSI14"].iloc[-1]
     if last_rsi < 30:
         msg = f"📉 [TA] XAU/USD RSI14 oversold: {last_rsi:.1f}"
         await bot.send_message(chat_id=CHAT_ID, text=msg)
