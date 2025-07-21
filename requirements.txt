@@ -1,7 +1,8 @@
 setuptools
 feedparser
 pandas
-pandas-ta
+numpy
+ta
 transformers
 python-telegram-bot
 aiohttp
