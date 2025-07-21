@@ -1,3 +1,10 @@
+import os, pprint
+pprint.pprint({
+    'TELEGRAM_TOKEN': os.getenv('TELEGRAM_TOKEN'),
+    'CHAT_ID': os.getenv('CHAT_ID'),
+    'AV_API_KEY': os.getenv('AV_API_KEY'),
+})
+
 import os
 import asyncio
 import feedparser
